@@ -1,8 +1,16 @@
 var firebase = require("firebase");
+var express = require('express');
+
+var app = express();
+var port = process.env.PORT || 8081;
 
 firebase.initializeApp({
     serviceAccount: 'conf/Bread-b1b218ad8f50.json',
     databaseURL: 'https://bread-e6858.firebaseio.com'
+});
+
+app.listen(port, function() {
+    console.log('App is running on http://localhost:%s', port);
 });
 
 var firebaseDB = firebase.database();
