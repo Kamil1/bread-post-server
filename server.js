@@ -23,7 +23,7 @@ app.get('/', function(request, response) {
   response.end('A-Ok');
 });
 
-app.post('/share_transaction', function(request, response) {
+app.post('/share_transaction', jsonParser, function(request, response) {
   if (!request.body) {
     reponse.status(400).json({error: "Bad Request"});
   }
