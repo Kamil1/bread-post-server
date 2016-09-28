@@ -18,6 +18,7 @@ var transactionRef = firebaseDB.ref("transactions");
 
 transactionRef.on("child_added", function(snapshot) {
   console.log("child added");
+
   
   var post      = snapshot.val();
   var userID    = post.user_id;
