@@ -30,7 +30,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
   }
 
   var transactionID = request.body.transaction_id;
-  var transactionRef = firebaseDB.ref("transactions/" + transaction_id);
+  var transactionRef = firebaseDB.ref("transactions/" + transactionId);
   transactionRef.once("value", function(snapshot) {
     var transaction = snapshot.val();
 
