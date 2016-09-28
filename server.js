@@ -29,7 +29,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     reponse.status(400).json({error: "Bad Request"});
   }
 
-  var transactionID = response.body.transaction_id;
+  var transactionID = request.body.transaction_id;
   var transactionRef = firebaseDB.ref("transactions/" + transaction_id);
   transactionRef.once("value", function(snapshot) {
     var transaction = snapshot.val();
