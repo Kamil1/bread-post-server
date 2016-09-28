@@ -11,6 +11,7 @@ var firebaseDB = firebase.database();
 
 var app = express();
 var port = process.env.PORT || 8081;
+var jsonParser = bodyParser.json();
 
 app.listen(port, function() {
     console.log('App is running on http://localhost:%s', port);
