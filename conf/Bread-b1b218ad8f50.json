@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "bread-e6858",
+  "private_key_id": "b1b218ad8f507caec7d1891c880cc0e8130b5429",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCubEQviKWLmIa9\nyEpeciEyQcEgprGmNJFtuNS2STDNaGByxRnBEa4K7bMXyVoE3HzjRqCIVGwzPjmq\nhcyfQ7iAuGaw6bSbIqiV6ZNWwkuCguB0H4rBsQAeVDfXyK+SlCMxi4M8XbSn9qNm\nGQ17lojcQgXFbrOeRxoHA1ftIXzRItvKxozRDV30KTEzlkjvtkvEfrs86Px1n+W/\nhDagEYMD/3svXB1jAYKEjz6XIQtuyXgJOaYaZKU9ghEq9vaH+LGANXY4wb81MLRl\nDP5e+V+FFBWk4+EW/wbaM2QfZNtboG0srcL52Zn0K4SXkbHpbH3M6xBj0uCIBIEc\nHoA13XWlAgMBAAECggEAYZI07nY9TQLM1RtW5tBnW4rG83HsTLJ5a+yKKVJ2F2G9\nGlbB2mv+dSSVG8hKMA/7WNQodzrqsBut/IMOfUVPz8nXwD1sB6ByuDHKdy0HOoHl\n92+xmjpee5jXCEG+XXu62DtX9YvhxFfG/hUjorAJ7VSNj+0mU3MozyWCqScjgIVX\ncm6jYeu3eifRgiA9lTILFWI0Ol7NIR/gt4cpa+wagZISOFDnDOII64rlLR31YhBf\nFY9SquFuehe1zSOqby7gjsq2UcJYG8g8UAdZE5cm5I+gpTlhxoZCnGr8s4pdw+I3\n7nd+H/24xYyByyMeT31cLYREuLCDK0cONfFvqZhtwQKBgQDjBEJSPYlCe0YJ8RGc\nkZWo9k07Lti9dL4Aqy3zaYEjcWPtZBnT22SbSOLIb14i8YexqWAGla5ZveXsL4N2\nMM+h8i2bx9pp8rwcjgc42Mn2JXymckLZNVgi9ALdtouXllIK0t9pYcnhH9PDvvDu\n2AD220CU/1aKE9fyVofJrcqPdQKBgQDEsQztY+8TVolQUdVgbr/YFPvlLV/juTlO\nz8eb+qk3KjknAMZmrYeJdnT9yoD6qJvE+nLXG5rV7kYKAiM1PY8VK97FqeLtgb77\nNGg+YKocmTQryTGud1K14IzYV9vcODeEOFWFUUiphWRnZ54Mq6dRJ9YNufYyfkw1\nMDEtbdo3cQKBgC1EUCUt+Ay1oAWjeCuMLBeA5W2Drdw5RxnDCGqdAw8aMR7I8w13\nldwQ8IefDVpSZwhaCbfGaPmkEBDEeKY8nWphbA7ADyFJMZFQEMiZEcxvNSfLaOD+\n7hAqL9gd6j/TzZAy9DGDOkoVmphRnqFBmQ+gMISFVbA6vLip4HGqodVxAoGBAI6S\nzA0ToEvDMXugJexluvgVldW0w0odjDXdlRIyaxBKsezcufPZm2KAFCOW81E+gNMS\nu8XDA8RImEpO7Fh+S8YL68oZ8B07LEWI4ns8tHJQdym6CCIv6iteHpn/baY+tbdI\n4mzl06bVw0bVLBKBJqJEHvwKLTTCqdjwGuWUOFZxAoGAdLcvKHl5SyByyOlo//Ga\nMPuMRKL74+b7TSa4YqRDssQ5hGCy0GLMpm+tO2IfIWcIv47aDHcrLfnXxXcP3yGG\nTw1PD0oJDIwZhZYZSxtmG8KS+VrorFwL+dIgzhpRu7dGpQi9a5mvHNt/8khdJljz\nUJra2VYs51TR1EJQ9phWHUU=\n-----END PRIVATE KEY-----\n",
+  "client_email": "bread-post-server@bread-e6858.iam.gserviceaccount.com",
+  "client_id": "106111434267412298832",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/bread-post-server%40bread-e6858.iam.gserviceaccount.com"
+}
