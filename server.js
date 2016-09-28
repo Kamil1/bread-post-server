@@ -16,7 +16,7 @@ app.listen(port, function() {
 var firebaseDB = firebase.database();
 var transactionRef = firebaseDB.ref("transactions");
 
-transactionRef.on("child_added", function(snapshot) {
+transactionRef.once("child_added", function(snapshot) {
   console.log("child added");
 
   var post      = snapshot.val();
