@@ -66,7 +66,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
       if (quantity > 1) {
         message = "Just got " + quantity + " " + itemName + "s in " + clientName + "!";
       } else {
-        message = "Just got " + itemName + " in " + clientName + "!";
+        message = "Just got a " + itemName + " in " + clientName + "!";
       }
     
       postRef.push({
@@ -89,4 +89,37 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     })
 
   });
+});
+
+app.post('/like_post', jsonParser, function(request, response) {
+  if (!request.body) {
+    response.status(400).json({error: "Bad Request"});
+  }
+
+  var userID = request.body.user_id;
+  var postID = request.body.post_id;
+
+  var postRef = firebaseDB.ref("users/" + userID + "/posts/" + postID +"/likes");
+  postRef.transaction(function(likes) {
+    return (likes || 0) + 1;
+  }, function(error) {
+    if (error) {
+      response.status(500).json({error: "Internal Server Error"});
+      console.log("Error saving data to firebase: " + error);
+      return;
+    } else {
+      response.status(200).json({result: "Like Successful"});
+      return;
+    }
+  });
+
+});
+
+app.post('/get_feed', jsonParser, function(request, response) {
+  if (!request.body) {
+    reponse.status(400).json({error: "Bad Request"});
+  }
+
+  
+
 });
