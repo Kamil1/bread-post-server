@@ -63,11 +63,20 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     function createPost() {
       var postRef = firebaseDB.ref("posts");
       var userPostsRef = firebaseDB.ref("users/" + userID + "/posts");
+      var clientMessageLength = clientName.length;
+      var itemMessageLength = itemName.length;
+      
       var message = "";
+      var clientMessageIndex = 0;
+      var itemMessageIndex = 0;
       if (quantity > 1) {
         message = "Just got " + quantity + " " + itemName + "s in " + clientName + "!";
+        clientMessageIndex = 15 + quantity.toString().length + itemName.length;
+        itemMessageIndex = 10 + quantity.toString().length;
       } else {
         message = "Just got a " + itemName + " in " + clientName + "!";
+        clientMessageIndex = 15 + itemName.length;
+        itemMessageIndex = 11;
       }
     
       var newPostRef = postRef.push();
@@ -76,7 +85,13 @@ app.post('/share_transaction', jsonParser, function(request, response) {
         message: message,
         timestamp: timestamp,
         user_id: userID,
-        likes: 0
+        likes: 0,
+        client_id: clientID,
+        client_message_index: clientMessageIndex,
+        client_message_length: clientMessageLength,
+        item_id: itemID,
+        item_message_index: itemMessageIndex,
+        item_message_length: itemMessageLength
       }, function(error) {
         if (error) {
           response.status(500).json({error: "Internal Server Error"});
@@ -110,6 +125,8 @@ app.post('/like_post', jsonParser, function(request, response) {
   if (!request.body) {
     response.status(400).json({error: "Bad Request"});
   }
+
+  //TODO: check if post exists before liking it
 
   var postID = request.body.post_id;
 
