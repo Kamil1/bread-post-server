@@ -71,7 +71,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
       }
     
       var newPostRef = postRef.push();
-      var postID = newPostRef.key();
+      var postID = newPostRef.key;
       newPostRef.set({
         message: message,
         timestamp: timesrtamp,
