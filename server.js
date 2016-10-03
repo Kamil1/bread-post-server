@@ -61,7 +61,8 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     }
 
     function createPost() {
-      var postRef = firebaseDB.ref("users/" + userID + "/posts");
+      var postRef = firebaseDB.ref("posts");
+      var userPostsRef = firebaseDB.ref("users/" + userID + "/posts");
       var message = "";
       if (quantity > 1) {
         message = "Just got " + quantity + " " + itemName + "s in " + clientName + "!";
@@ -69,16 +70,30 @@ app.post('/share_transaction', jsonParser, function(request, response) {
         message = "Just got a " + itemName + " in " + clientName + "!";
       }
     
-      postRef.push({
+      var newPostRef = postRef.push();
+      var postID = newPostRef.key();
+      newPostRef.set({
         message: message,
-        timestamp: timestamp
+        timestamp: timesrtamp,
+        user_id: userID,
+        likes: 0
       }, function(error) {
         if (error) {
           response.status(500).json({error: "Internal Server Error"});
           return;
+        } else {
+          var postObject = {};
+          postObject[postID] = true;
+          userPostsRef.update(postObject, function(error) {
+            if (error) {
+              response.status(500).json({error: "Internal Server Error"});
+              return;
+            } else {
+              response.status(200).json({result: "Post Successfully Created"});
+              return;
+            }
+          });
         }
-        response.status(500).json({result: "Post Successfully Created"});
-        return;
       });
     }
 
