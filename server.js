@@ -113,7 +113,7 @@ app.post('/like_post', jsonParser, function(request, response) {
 
   var postID = request.body.post_id;
 
-  var postRef = firebaseDB.ref("posts/" + postID);
+  var postRef = firebaseDB.ref("posts/" + postID + "/likes");
   postRef.transaction(function(likes) {
     return (likes || 0) + 1;
   }, function(error) {
