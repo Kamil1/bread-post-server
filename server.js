@@ -111,10 +111,9 @@ app.post('/like_post', jsonParser, function(request, response) {
     response.status(400).json({error: "Bad Request"});
   }
 
-  var userID = request.body.user_id;
   var postID = request.body.post_id;
 
-  var postRef = firebaseDB.ref("users/" + userID + "/posts/" + postID +"/likes");
+  var postRef = firebaseDB.ref("posts/" + postID);
   postRef.transaction(function(likes) {
     return (likes || 0) + 1;
   }, function(error) {
