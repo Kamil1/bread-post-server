@@ -107,7 +107,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
 
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
       followersRef.once('value').then(function(followersSnapshot) {
-        var rootRef = firebaseDB.ref("");
+        var rootRef = firebaseDB.ref();
         rootRef.update(fanoutTimelines(followersSnapshot, postObject, fanoutObject), function(error) {
           if (error) {
             response.status(500).json({error: "Internal Server Error"});
