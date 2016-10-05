@@ -14,6 +14,7 @@ var port = process.env.PORT || 8081;
 var jsonParser = bodyParser.json();
 
 function fanoutTimelines(followersSnapshot, post) {
+  console.log("fanning out posts");
   var followers = Object.keys(followersSnapshot.val());
   var fanoutObject = {};
   followers.forEach((key) => fanoutObject['/timeline/' + key] = post);
