@@ -13,6 +13,13 @@ var app = express();
 var port = process.env.PORT || 8081;
 var jsonParser = bodyParser.json();
 
+function fanoutTimelines(followersSnapshot, post) {
+  var followers = Object.keys(followersSnapshot.val());
+  var fanoutObject = {};
+  followers.forEach((key) => fanoutObject['/timeline/' + key] = post);
+  return fanoutObject;
+}
+
 app.listen(port, function() {
     console.log('App is running on http://localhost:%s', port);
 });
@@ -61,7 +68,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     }
 
     function createPost() {
-      var postRef = firebaseDB.ref("posts");
+      var postRef = firebaseDB.ref("posts/" + userID);
       var userPostsRef = firebaseDB.ref("users/" + userID + "/posts");
       var clientMessageLength = clientName.length;
       var itemMessageLength = itemName.length;
@@ -81,34 +88,27 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     
       var newPostRef = postRef.push();
       var postID = newPostRef.key;
-      newPostRef.set({
-        message: message,
-        timestamp: timestamp,
-        user_id: userID,
-        likes: 0,
-        client_id: clientID,
-        client_message_index: clientMessageIndex,
-        client_message_length: clientMessageLength,
-        item_id: itemID,
-        item_message_index: itemMessageIndex,
-        item_message_length: itemMessageLength
-      }, function(error) {
-        if (error) {
-          response.status(500).json({error: "Internal Server Error"});
-          return;
-        } else {
-          var postObject = {};
-          postObject[postID] = true;
-          userPostsRef.update(postObject, function(error) {
-            if (error) {
-              response.status(500).json({error: "Internal Server Error"});
-              return;
-            } else {
-              response.status(200).json({result: "Post Successfully Created"});
-              return;
-            }
-          });
+      var postObject = {
+        postID: {
+          {
+            message: message,
+            timestamp: timestamp,
+            user_id: userID,
+            likes: 0,
+            client_id: clientID,
+            client_message_index: clientMessageIndex,
+            client_message_length: clientMessageLength,
+            item_id: itemID,
+            item_message_index: itemMessageIndex,
+            item_message_length: itemMessageLength,
+            has_video: false,
+            has_image: false
+          }
         }
+      };
+      var followersRef = firebaseDB.ref("users/" + userID + "/followers");
+      follwersRef.once('value').then(function(followersSnapshot) {
+        firebaseDB.update(fanoutTimelines(userID, postObject));
       });
     }
 
@@ -146,10 +146,15 @@ app.post('/like_post', jsonParser, function(request, response) {
 
 });
 
+app.get('/top_posts', function(request, response) {
+
+});
+
 app.post('/get_feed', jsonParser, function(request, response) {
   if (!request.body) {
     reponse.status(400).json({error: "Bad Request"});
   }
+
 
   
 
