@@ -13,9 +13,9 @@ var app = express();
 var port = process.env.PORT || 8081;
 var jsonParser = bodyParser.json();
 
-function fanoutTimelines(followersSnapshot, post, fanoutObject) {
+function fanoutTimelines(followersSnapshot, post, postID, fanoutObject) {
   var followers = Object.keys(followersSnapshot.val());
-  followers.forEach((key) => fanoutObject["timeline/" + key] = post);
+  followers.forEach((key) => fanoutObject["timeline/" + key + "/" + postID] = post);
   return fanoutObject;
 }
 
@@ -86,8 +86,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     
       var newPostRef = postRef.push();
       var postID = newPostRef.key;
-      var postObject = {};
-      postObject[postID] = {
+      var postObject = {
         message: message,
         timestamp: timestamp,
         user_id: userID,
@@ -103,12 +102,12 @@ app.post('/share_transaction', jsonParser, function(request, response) {
       };
 
       var fanoutObject = {};
-      fanoutObject["posts/" + userID] = postObject;
+      fanoutObject["posts/" + userID + "/" + postID] = postObject;
 
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
       followersRef.once('value').then(function(followersSnapshot) {
         var rootRef = firebaseDB.ref();
-        rootRef.update(fanoutTimelines(followersSnapshot, postObject, fanoutObject), function(error) {
+        rootRef.update(fanoutTimelines(followersSnapshot, postObject, postID, fanoutObject), function(error) {
           if (error) {
             response.status(500).json({error: "Internal Server Error"});
             console.log("Error saving data to firebase: " + error);
