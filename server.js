@@ -90,20 +90,18 @@ app.post('/share_transaction', jsonParser, function(request, response) {
       var postID = newPostRef.key;
       var postObject = {
         postID: {
-          {
-            message: message,
-            timestamp: timestamp,
-            user_id: userID,
-            likes: 0,
-            client_id: clientID,
-            client_message_index: clientMessageIndex,
-            client_message_length: clientMessageLength,
-            item_id: itemID,
-            item_message_index: itemMessageIndex,
-            item_message_length: itemMessageLength,
-            has_video: false,
-            has_image: false
-          }
+          message: message,
+          timestamp: timestamp,
+          user_id: userID,
+          likes: 0,
+          client_id: clientID,
+          client_message_index: clientMessageIndex,
+          client_message_length: clientMessageLength,
+          item_id: itemID,
+          item_message_index: itemMessageIndex,
+          item_message_length: itemMessageLength,
+          has_video: false,
+          has_image: false
         }
       };
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
