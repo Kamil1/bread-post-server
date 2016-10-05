@@ -107,9 +107,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
 
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
       followersRef.once('value').then(function(followersSnapshot) {
-        var timelineRef = firebaseDB.ref("timeline");
-        timelineRef.update(fanoutTimelines(followersSnapshot, postObject, fanoutObject), function(error) {
-          console.log("in callback");
+        firebaseDB.update(fanoutTimelines(followersSnapshot, postObject, fanoutObject), function(error) {
           if (error) {
             response.status(500).json({error: "Internal Server Error"});
             console.log("Error saving data to firebase: " + error);
