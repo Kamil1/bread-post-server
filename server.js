@@ -14,12 +14,9 @@ var port = process.env.PORT || 8081;
 var jsonParser = bodyParser.json();
 
 function fanoutTimelines(followersSnapshot, post) {
-  console.log("fanning out posts");
   var followers = Object.keys(followersSnapshot.val());
   var fanoutObject = {};
-  console.log("Followers: " + followers);
-  followers.forEach((key) => fanoutObject['/timeline/' + key] = post);
-  console.log("fanout object is: " + fanoutObject);
+  followers.forEach((key) => fanoutObject[key] = post);
   return fanoutObject;
 }
 
@@ -108,7 +105,9 @@ app.post('/share_transaction', jsonParser, function(request, response) {
       };
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
       followersRef.once('value').then(function(followersSnapshot) {
-        firebaseDB.update(fanoutTimelines(followersSnapshot, postObject), function(error) {
+        var timelineRef = firebaseDB.ref("timeline");
+        timelineRef.update(fanoutTimelines(followersSnapshot, postObject), function(error) {
+          console.log("in callback");
           if (error) {
             response.status(500).json({error: "Internal Server Error"});
             console.log("Error saving data to firebase: " + error);
