@@ -14,6 +14,7 @@ var port = process.env.PORT || 8081;
 var jsonParser = bodyParser.json();
 
 function fanoutTimelines(followersSnapshot, post) {
+  console.log("fanning out posts");
   var followers = Object.keys(followersSnapshot.val());
   var fanoutObject = {};
   followers.forEach((key) => fanoutObject['/timeline/' + key] = post);
@@ -88,25 +89,26 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     
       var newPostRef = postRef.push();
       var postID = newPostRef.key;
-      var postObject = {
-        postID: {
-          message: message,
-          timestamp: timestamp,
-          user_id: userID,
-          likes: 0,
-          client_id: clientID,
-          client_message_index: clientMessageIndex,
-          client_message_length: clientMessageLength,
-          item_id: itemID,
-          item_message_index: itemMessageIndex,
-          item_message_length: itemMessageLength,
-          has_video: false,
-          has_image: false
-        }
+      var postObject = {};
+      postObject[postID] = {
+        message: message,
+        timestamp: timestamp,
+        user_id: userID,
+        likes: 0,
+        client_id: clientID,
+        client_message_index: clientMessageIndex,
+        client_message_length: clientMessageLength,
+        item_id: itemID,
+        item_message_index: itemMessageIndex,
+        item_message_length: itemMessageLength,
+        has_video: false,
+        has_image: false
       };
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
       follwersRef.once('value').then(function(followersSnapshot) {
         firebaseDB.update(fanoutTimelines(userID, postObject));
+        console.log("posts fanned out");
+        response.status(200).json({result: "Like Successful"});
       });
     }
 
