@@ -18,6 +18,7 @@ function fanoutTimelines(followersSnapshot, post) {
   var followers = Object.keys(followersSnapshot.val());
   var fanoutObject = {};
   followers.forEach((key) => fanoutObject['/timeline/' + key] = post);
+  console.log("fanout object is: " + fanoutObject);
   return fanoutObject;
 }
 
