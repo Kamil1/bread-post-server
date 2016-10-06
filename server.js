@@ -91,7 +91,6 @@ app.post('/share_transaction', jsonParser, function(request, response) {
         message: message,
         timestamp: timestamp,
         user_id: userID,
-        likes: 0,
         client_id: clientID,
         client_message_index: clientMessageIndex,
         client_message_length: clientMessageLength,
@@ -135,6 +134,7 @@ app.post('/like_post', jsonParser, function(request, response) {
   }
 
   //TODO: check if post exists before liking it
+  //TODO: check to see if liker exists before liking it
 
   var postID = request.body.post_id;
   var authorID = request.body.author_id;
@@ -171,10 +171,15 @@ app.post('/get_feed', jsonParser, function(request, response) {
   }
 
   var userID = request.body.user_id;
+  var since = request.body.since;
+  if (since == null) {
+    since = new Date().getTime() / 1000;
+  }
 
   var timelineRef = firebaseDB.ref("timeline/" + userID);
-  timelineRef.once('value').then(function() {
-
+  timelineRef.orderByChild("timestamp").startAt(since).limitToFirst(15).once("value", function(snapshot) {
+    console.log(snapshot.val());
+    response.status(200).json({result: snapshot.val()});
   });
 
 });
