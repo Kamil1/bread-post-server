@@ -148,18 +148,16 @@ app.post('/like_post', jsonParser, function(request, response) {
     likePaths.forEach(function(likePath) {
       fanoutObject[likePath] = true;
     });
-  });
-
-  var rootRef = firebaseDB.ref();
-  rootRef.update(fanoutObject, function(error) {
-    if (error) {
-      response.status(500).json({error: "Internal Server Error"});
-      console.log("Error saving post like to firebase: " + error);
-      return;
-    } else {
-      response.status(200).json({result: "Like Successful"});
-      return;
-    }
+    var rootRef = firebaseDB.ref();
+    rootRef.update(fanoutObject, function(error) {
+      if (error) {
+        response.status(500).json({error: "Internal Server Error"});
+        console.log("Error saving post like to firebase: " + error);
+      } else {
+        response.status(200).json({result: "Like Successful"});
+        return;
+      }
+    });
   });
 });
 
