@@ -13,7 +13,8 @@ var app = express();
 var port = process.env.PORT || 8081;
 var jsonParser = bodyParser.json();
 
-function fanoutTimelines(followersSnapshot, post, postID, fanoutObject) {
+function fanoutTimelines(followersSnapshot, post, postID) {
+  var fanoutObject = {};
   var followers = Object.keys(followersSnapshot.val());
   followers.forEach((key) => fanoutObject["timeline/" + key + "/" + postID] = post);
   return fanoutObject;
@@ -101,13 +102,12 @@ app.post('/share_transaction', jsonParser, function(request, response) {
         has_image: false
       };
 
-      var fanoutObject = {};
-      fanoutObject["posts/" + userID + "/" + postID] = postObject;
-
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
       followersRef.once('value').then(function(followersSnapshot) {
         var rootRef = firebaseDB.ref();
-        rootRef.update(fanoutTimelines(followersSnapshot, postObject, postID, fanoutObject), function(error) {
+        var fanoutObject = fanoutTimelines(followersSnapshot, postObject, postID, fanoutObject);
+        fanoutObject["posts/" + userID + "/" + postID] = postObject;
+        rootRef.update(fanoutObject, function(error) {
           if (error) {
             response.status(500).json({error: "Internal Server Error"});
             console.log("Error saving data to firebase: " + error);
@@ -135,23 +135,33 @@ app.post('/like_post', jsonParser, function(request, response) {
   }
 
   //TODO: check if post exists before liking it
+  //TODO: can this be atomic?
 
   var postID = request.body.post_id;
+  var authorID = request.body.author_id;
+  var likerID = request.body.liker_id;
 
-  var postRef = firebaseDB.ref("posts/" + postID + "/likes");
-  postRef.transaction(function(likes) {
-    return (likes || 0) + 1;
-  }, function(error) {
+  var fanoutObject = {};
+  fanoutObject["posts/" + userID + "/" + postID + "/likers/" + likerID] = true;
+  var followersRef = firebaseDB.ref("users/" + authorID + "/followers");
+  followersRef.once('value').then(function(followersSnapshot) {
+    var likePaths = Object.keys(followersSnapshot.val()).map((followerID) => "timeline/" + followerID + "/" + postID + "/likers/" + likerID);
+    likePaths.forEach(function(likePath) {
+      fanoutObject[likePath] = true;
+    });
+  });
+
+  var rootRef = firebaseDB.ref();
+  rootRef.update(fanoutObject, function(error) {
     if (error) {
       response.status(500).json({error: "Internal Server Error"});
-      console.log("Error saving data to firebase: " + error);
+      console.log("Error saving post like to firebase: " + error);
       return;
     } else {
       response.status(200).json({result: "Like Successful"});
       return;
     }
   });
-
 });
 
 app.get('/top_posts', function(request, response) {
@@ -163,7 +173,11 @@ app.post('/get_feed', jsonParser, function(request, response) {
     reponse.status(400).json({error: "Bad Request"});
   }
 
+  var userID = request.body.user_id;
 
-  
+  var timelineRef = firebaseDB.ref("timeline/" + userID);
+  timelineRef.once('value').then(function() {
+
+  });
 
 });
