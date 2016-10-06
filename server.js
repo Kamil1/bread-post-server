@@ -135,14 +135,13 @@ app.post('/like_post', jsonParser, function(request, response) {
   }
 
   //TODO: check if post exists before liking it
-  //TODO: can this be atomic?
 
   var postID = request.body.post_id;
   var authorID = request.body.author_id;
   var likerID = request.body.liker_id;
 
   var fanoutObject = {};
-  fanoutObject["posts/" + userID + "/" + postID + "/likers/" + likerID] = true;
+  fanoutObject["posts/" + authorID + "/" + postID + "/likers/" + likerID] = true;
   var followersRef = firebaseDB.ref("users/" + authorID + "/followers");
   followersRef.once('value').then(function(followersSnapshot) {
     var likePaths = Object.keys(followersSnapshot.val()).map((followerID) => "timeline/" + followerID + "/" + postID + "/likers/" + likerID);
