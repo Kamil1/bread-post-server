@@ -177,7 +177,7 @@ app.post('/get_feed', jsonParser, function(request, response) {
   }
 
   var timelineRef = firebaseDB.ref("timeline/" + userID);
-  timelineRef.orderByChild("timestamp").startAt(since).limitToFirst(15).once("value", function(snapshot) {
+  timelineRef.orderByChild("timestamp").endAt(since).limitToLast(15).once("value", function(snapshot) {
     console.log(snapshot.val());
     response.status(200).json({result: snapshot.val()});
   });
