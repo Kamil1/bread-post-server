@@ -199,10 +199,10 @@ app.post('/feed_head', jsonParser, function(request, response) {
 
   // TODO: ensure none of these fields are null -- this should be checked on all endpoints in all servers
   var userID = request.body.user_id;
-  var until = request.body.until;
+  var until = request.body.until + 1;
 
   var timelineRef = firebaseDB.ref("timeline/" + userID);
-  timelineRef.orderByChild("timestamp").endAt(until).limitToFirst(15).once("value", function(snapshot) {
+  timelineRef.orderByChild("timestamp").startAt(until).limitToFirst(15).once("value", function(snapshot) {
     response.status(200).json({result: snapshot.val()});
     return;
   }, function(error) {
