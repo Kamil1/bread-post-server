@@ -33,7 +33,8 @@ app.get('/', function(request, response) {
 
 app.post('/share_transaction', jsonParser, function(request, response) {
   if (!request.body) {
-    reponse.status(400).json({error: "Bad Request"});
+    response.status(400).json({error: "Bad Request"});
+    return;
   }
 
   var transactionID = request.body.transaction_id;
@@ -131,6 +132,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
 app.post('/like_post', jsonParser, function(request, response) {
   if (!request.body) {
     response.status(400).json({error: "Bad Request"});
+    return;
   }
 
   //TODO: check if post exists before liking it
@@ -165,9 +167,10 @@ app.get('/top_posts', function(request, response) {
 
 });
 
-app.post('/get_feed', jsonParser, function(request, response) {
+app.post('/feed_tail', jsonParser, function(request, response) {
   if (!request.body) {
-    reponse.status(400).json({error: "Bad Request"});
+    response.status(400).json({error: "Bad Request"});
+    return;
   }
 
   var userID = request.body.user_id;
@@ -178,8 +181,41 @@ app.post('/get_feed', jsonParser, function(request, response) {
 
   var timelineRef = firebaseDB.ref("timeline/" + userID);
   timelineRef.orderByChild("timestamp").endAt(since).limitToLast(15).once("value", function(snapshot) {
-    console.log(snapshot.val());
     response.status(200).json({result: snapshot.val()});
+    return;
+  }, function(error) {
+    response.status(500).json({error: "Internal Server Error"});
+    console.log("Error retrieving timeline from Firebase: " + error);
+    return;
   });
 
 });
+
+app.post('/feed_head', jsonParser, function(request, response) {
+  if (!request.body) {
+    response.status(400).json({error: "Bad Request"});
+    return;
+  }
+
+  // TODO: ensure none of these fields are null -- this should be checked on all endpoints in all servers
+  var userID = request.body.user_id;
+  var until = request.body.until;
+
+  var timelineRef = firebaseDB.ref("timeline/" + userID);
+  timelineRef.orderByChild("timestamp").endAt(until).limitToFirst(15).once("value", function(snapshot) {
+    response.status(200).json({result: snapshot.val()});
+    return;
+  }, function(error) {
+    response.status(500).json({error: "Internal Server Error"});
+    console.log("Error retrieving timeline form Firebase: " + error);
+    return;
+  });
+
+});
+
+
+
+
+
+
+
