@@ -27,8 +27,7 @@ app.listen(port, function() {
 app.use(bodyParser.json());
 
 app.get('/', function(request, response) {
-  response.writeHead(200, {'Content-Type': 'text/plain'});
-  response.end('A-Ok');
+  response.status(200).json({result: 'A-Ok'});
 });
 
 app.post('/share_transaction', jsonParser, function(request, response) {
@@ -51,6 +50,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
 
     var clientName = "";
     var itemName = "";
+    var username = "";
 
     function getClientName(callback) {
       var clientRef = firebaseDB.ref("clients/" + clientID);
@@ -64,6 +64,14 @@ app.post('/share_transaction', jsonParser, function(request, response) {
       var itemRef = firebaseDB.ref("clients/" + clientID + "/items/" + itemID);
       itemRef.once("value", function(data) {
         itemName = data.val().name;
+        callback();
+      });
+    }
+
+    function getUsername(callback) {
+      var userRef = firebaseDB.ref("users/" + userID + "/account");
+      userRef.once("value", function(data) {
+        username = data.val().username;
         callback();
       });
     }
@@ -92,14 +100,14 @@ app.post('/share_transaction', jsonParser, function(request, response) {
         message: message,
         timestamp: timestamp,
         user_id: userID,
+        username: username,
         client_id: clientID,
         client_message_index: clientMessageIndex,
         client_message_length: clientMessageLength,
         item_id: itemID,
+        item_client_id: clientID,
         item_message_index: itemMessageIndex,
-        item_message_length: itemMessageLength,
-        has_video: false,
-        has_image: false
+        item_message_length: itemMessageLength
       };
 
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
@@ -122,7 +130,9 @@ app.post('/share_transaction', jsonParser, function(request, response) {
 
     getClientName(function() {
       getItemName(function() {
-        createPost();
+        getUsername(function() {
+          createPost();
+        })
       })
     })
 
@@ -167,48 +177,63 @@ app.get('/top_posts', function(request, response) {
 
 });
 
-app.post('/feed_tail', jsonParser, function(request, response) {
+app.post('/feed_since', jsonParser, function(request, response) {
   if (!request.body) {
     response.status(400).json({error: "Bad Request"});
     return;
   }
 
-  var userID = request.body.user_id;
+  var token = request.body.user_token;
   var since = request.body.since;
-  if (since == null) {
-    since = new Date().getTime() / 1000;
+
+  function getFeed(userID) {
+    var timelineRef = firebaseDB.ref("timeline/" + userID);
+    timelineRef.orderByChild("timestamp").endAt(since).limitToLast(15).once("value", function(snapshot) {
+      response.status(200).json({result: snapshot.val()});
+      return;
+    }, function(error) {
+      response.status(500).json({error: "Internal Server Error"});
+      console.log("Error retrieving timeline from Firebase: " + error);
+      return;
+    });
   }
 
-  var timelineRef = firebaseDB.ref("timeline/" + userID);
-  timelineRef.orderByChild("timestamp").endAt(since).limitToLast(15).once("value", function(snapshot) {
-    response.status(200).json({result: snapshot.val()});
-    return;
-  }, function(error) {
-    response.status(500).json({error: "Internal Server Error"});
-    console.log("Error retrieving timeline from Firebase: " + error);
-    return;
+  firebase.auth().verifyIdToken(token).then(function(decodedToken) {
+    getFeed(decodedToken.uid);
+  }).catch(function(error) {
+    console.log(error);
+    response.status(401).json({error: "Unauthorized"});
   });
-
+  
 });
 
-app.post('/feed_head', jsonParser, function(request, response) {
+app.post('/feed_until', jsonParser, function(request, response) {
   if (!request.body) {
     response.status(400).json({error: "Bad Request"});
     return;
   }
 
   // TODO: ensure none of these fields are null -- this should be checked on all endpoints in all servers
-  var userID = request.body.user_id;
-  var until = request.body.until + 1;
+  var until  = request.body.until + 1;
+  var token  = request.body.user_token;
 
-  var timelineRef = firebaseDB.ref("timeline/" + userID);
-  timelineRef.orderByChild("timestamp").startAt(until).limitToFirst(15).once("value", function(snapshot) {
-    response.status(200).json({result: snapshot.val()});
-    return;
-  }, function(error) {
-    response.status(500).json({error: "Internal Server Error"});
-    console.log("Error retrieving timeline form Firebase: " + error);
-    return;
+  function getFeed(userID) {
+    var timelineRef = firebaseDB.ref("timeline/" + userID);
+    timelineRef.orderByChild("timestamp").startAt(until).limitToFirst(15).once("value", function(snapshot) {
+      response.status(200).json({result: snapshot.val()});
+      return;
+    }, function(error) {
+      response.status(500).json({error: "Internal Server Error"});
+      console.log("Error retrieving timeline form Firebase: " + error);
+      return;
+    });
+  }
+
+  firebase.auth().verifyIdToken(token).then(function(decodedToken) {
+    getFeed(decodedToken.uid);
+  }).catch(function(error) {
+    console.log(error);
+    response.status(401).json({error: "Unauthorized"});
   });
 
 });
