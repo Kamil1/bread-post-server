@@ -70,7 +70,7 @@ function likePost(bool, postID, authorID, likerID, callback) {
   }
 
   function likeOnTimeline(callback) {
-    var timelineRef = firebaseDB.ref("timeline/" + userID + "/" + postID);
+    var timelineRef = firebaseDB.ref("timeline/" + likerID + "/" + postID);
     timelineRef.update({liked: bool}, function(error) {
       if (error) {
         response.status(500).json({error: "Internal Server Error"});
@@ -252,8 +252,6 @@ app.post('/unlike_post', jsonParser, function(request, response) {
   var token = request.body.user_token;
   var postID = request.body.post_id;
   var authorID = request.body.author_id;
-  var likerID = request.body.liker_id;
-
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
     likePost(false, postID, authorID, decodedToken.uid, function() {
       response.status(200).json({result: "Post Unliked Successfully"})
