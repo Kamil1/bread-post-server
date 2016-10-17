@@ -53,7 +53,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     var username = "";
 
     function getClientName(callback) {
-      var clientRef = firebaseDB.ref("clients/" + clientID);
+      var clientRef = firebaseDB.ref("clients/public/" + clientID);
       clientRef.once("value", function(data) {
         clientName = data.val().app_name;
         callback();
@@ -148,29 +148,85 @@ app.post('/like_post', jsonParser, function(request, response) {
   //TODO: check if post exists before liking it
   //TODO: check to see if liker exists before liking it
 
+  var token = request.body.user_token;
   var postID = request.body.post_id;
   var authorID = request.body.author_id;
   var likerID = request.body.liker_id;
 
-  var fanoutObject = {};
-  fanoutObject["posts/" + authorID + "/" + postID + "/likers/" + likerID] = true;
-  var followersRef = firebaseDB.ref("users/" + authorID + "/followers");
-  followersRef.once('value').then(function(followersSnapshot) {
-    var likePaths = Object.keys(followersSnapshot.val()).map((followerID) => "timeline/" + followerID + "/" + postID + "/likers/" + likerID);
-    likePaths.forEach(function(likePath) {
-      fanoutObject[likePath] = true;
-    });
-    var rootRef = firebaseDB.ref();
-    rootRef.update(fanoutObject, function(error) {
+  function updatePost(callback) {
+    var authorPostRef = firebaseDB.ref("posts/" + authorID + "/" + postID + "/likes");
+    authorPostRef.transaction(function(likes) {
+      return (likes || 0) + 1;
+    }, function(error, committed, snapshot) {
+      //TODO: handle committed boolean
       if (error) {
         response.status(500).json({error: "Internal Server Error"});
-        console.log("Error saving post like to firebase: " + error);
-      } else {
-        response.status(200).json({result: "Like Successful"});
         return;
       }
+      callback();
     });
+  }
+
+  function updateTimelines(callback) {
+    var followersRef = firebaseDB.ref("users/" + authorID + "/followers");
+    followersRef.once('value').then(function(followersSnapshot) {
+      var likePaths = Object.keys(followersSnapshot.val()).map((followerID) => "timeline/" + followerID + "/" + postID + "/likes");
+      likePaths.forEach(function(likePath) {
+        var likeRef = firebaseDB.ref(likePath);
+        likeRef.transaction(function(likes) {
+          return (likes || 0) + 1;
+        }, function(error, committed snapshot) {
+          //TODO: handle committed boolean
+          if (error) {
+            response.status(500).json({error: "Internal Server Error"});
+            return;
+          }
+          callback();
+        });
+      });
+    });
+  }
+
+  function updateLikers(callback) {
+    var likersRef = firebaseDB.ref("likers/" + postID);
+    likersRef.update({
+      likerID: true
+    }, function(error) {
+      if (error) {
+        response.status(500).json({error: "Internal Server Error"});
+        return;
+      }
+      callback();
+    });
+  }
+
+  function likeOnTimeline(callback) {
+    var timelineRef = firebaseDB.ref("timeline/" + userID + "/" + postID);
+    timelineRef.update({liked: true}, function(error) {
+      if (error) {
+        response.status(500).json({error: "Internal Server Error"});
+        return;
+      }
+      callback();
+    });
+  }
+
+  // TODO: add likes_post bool for each post in a user's timeline
+  firebase.auth().verifyIdToken(token).then(function(decodedToken) {
+    updatePost(function() {
+      updateTimelines(function() {
+        updateLikers(function() {
+          likeOnTimeline(function() {
+            response.status(200).json({result: "Like Successful"});
+          })
+        })
+      })
+    })
+  }).catch(function(error) {
+    console.log(error);
+    response.status(401).json({error: "Unauthorized"});
   });
+
 });
 
 app.get('/top_posts', function(request, response) {
@@ -204,7 +260,7 @@ app.post('/feed_since', jsonParser, function(request, response) {
     console.log(error);
     response.status(401).json({error: "Unauthorized"});
   });
-  
+
 });
 
 app.post('/feed_until', jsonParser, function(request, response) {
