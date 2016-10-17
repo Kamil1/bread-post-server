@@ -58,9 +58,9 @@ function likePost(bool, postID, authorID, likerID, callback) {
 
   function updateLikers() {
     var likersRef = firebaseDB.ref("likers/" + postID);
-    likersRef.update({
-      likerID: bool
-    }, function(error) {
+    var likerObj = {};
+    likerObj[likerID] = bool;
+    likersRef.update(likerObj, function(error) {
       if (error) {
         response.status(500).json({error: "Internal Server Error"});
         return;
@@ -86,8 +86,10 @@ function likePost(bool, postID, authorID, likerID, callback) {
 
   function minusOne(likes) {
     if (likes == null) {
+      console.log("likes is null")
       return;
     } else {
+      console.log("likes - 1")
       return likes - 1;
     }
   }
