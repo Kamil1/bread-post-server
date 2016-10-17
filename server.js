@@ -228,10 +228,9 @@ app.post('/like_post', jsonParser, function(request, response) {
   var token = request.body.user_token;
   var postID = request.body.post_id;
   var authorID = request.body.author_id;
-  var likerID = request.body.liker_id;
 
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
-    likePost(true, postID, authorID, likerID, function() {
+    likePost(true, postID, authorID, decodedToken.uid, function() {
       response.status(200).json({result: "Post Liked Successfully"})
     })
   }).catch(function(error) {
@@ -256,7 +255,7 @@ app.post('/unlike_post', jsonParser, function(request, response) {
   var likerID = request.body.liker_id;
 
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
-    likePost(false, postID, authorID, likerID, function() {
+    likePost(false, postID, authorID, decodedToken.uid, function() {
       response.status(200).json({result: "Post Unliked Successfully"})
     })
   }).catch(function(error) {
