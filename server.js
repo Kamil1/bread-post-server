@@ -87,11 +87,7 @@ function likePost(bool, postID, authorID, likerID, callback) {
   }
 
   function minusOne(likes) {
-    if (likes == null) {
-      return;
-    } else {
-      return likes - 1;
-    }
+    return (likes || 1) - 1;
   }
 
   if (bool) {
