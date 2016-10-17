@@ -83,6 +83,7 @@ function likePost(bool, postID, authorID, likerID, callback) {
   function addOne(likes) {
     if (likes == null) {
       console.log("likes is null");
+      console.log(likes || 0);
     }
     return (likes || 0) + 1;
   }
