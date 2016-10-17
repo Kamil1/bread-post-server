@@ -20,6 +20,82 @@ function fanoutTimelines(followersSnapshot, post, postID) {
   return fanoutObject;
 }
 
+function likePost(bool, postID, authorID, likerID, callback) {
+
+  function updatePost(unary, callback) {
+    var authorPostRef = firebaseDB.ref("posts/" + authorID + "/" + postID + "/likes");
+    authorPostRef.transaction(function(likes) {
+      return unary(likes);
+    }, function(error, committed, snapshot) {
+      //TODO: handle committed boolean
+      if (error) {
+        response.status(500).json({error: "Internal Server Error"});
+        return;
+      }
+      updateTimelines(unary, callback);
+    });
+  }
+
+  function updateTimelines(unary, callback) {
+    var followersRef = firebaseDB.ref("users/" + authorID + "/followers");
+    followersRef.once('value').then(function(followersSnapshot) {
+      var likePaths = Object.keys(followersSnapshot.val()).map((followerID) => "timeline/" + followerID + "/" + postID + "/likes");
+      likePaths.forEach(function(likePath) {
+        var likeRef = firebaseDB.ref(likePath);
+        likeRef.transaction(function(likes) {
+          return unary(likes);
+        }, function(error, committed, snapshot) {
+          //TODO: handle committed boolean
+          if (error) {
+            response.status(500).json({error: "Internal Server Error"});
+            return;
+          }
+          updateLikers(unary, callback);
+        });
+      });
+    });
+  }
+
+  function updateLikers(callback) {
+    var likersRef = firebaseDB.ref("likers/" + postID);
+    likersRef.update({
+      likerID: bool
+    }, function(error) {
+      if (error) {
+        response.status(500).json({error: "Internal Server Error"});
+        return;
+      }
+      likeOnTimeline(callback);
+    });
+  }
+
+  function likeOnTimeline(callback) {
+    var timelineRef = firebaseDB.ref("timeline/" + userID + "/" + postID);
+    timelineRef.update({liked: bool}, function(error) {
+      if (error) {
+        response.status(500).json({error: "Internal Server Error"});
+        return;
+      }
+      callback();
+    });
+  }
+
+  function addOne(likes) {
+    return (likes || 0) + 1;
+  }
+
+  function minusOne(likes) {
+    return (likes || 1) - 1;
+  }
+
+  if (bool) {
+    updatePost(addOne, callback);
+  } else {
+    updatePost(minusOne, callback);
+  }
+
+}
+
 app.listen(port, function() {
     console.log('App is running on http://localhost:%s', port);
 });
@@ -107,7 +183,8 @@ app.post('/share_transaction', jsonParser, function(request, response) {
         item_id: itemID,
         item_client_id: clientID,
         item_message_index: itemMessageIndex,
-        item_message_length: itemMessageLength
+        item_message_length: itemMessageLength,
+        liked: false
       };
 
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
@@ -153,74 +230,34 @@ app.post('/like_post', jsonParser, function(request, response) {
   var authorID = request.body.author_id;
   var likerID = request.body.liker_id;
 
-  function updatePost(callback) {
-    var authorPostRef = firebaseDB.ref("posts/" + authorID + "/" + postID + "/likes");
-    authorPostRef.transaction(function(likes) {
-      return (likes || 0) + 1;
-    }, function(error, committed, snapshot) {
-      //TODO: handle committed boolean
-      if (error) {
-        response.status(500).json({error: "Internal Server Error"});
-        return;
-      }
-      callback();
-    });
-  }
-
-  function updateTimelines(callback) {
-    var followersRef = firebaseDB.ref("users/" + authorID + "/followers");
-    followersRef.once('value').then(function(followersSnapshot) {
-      var likePaths = Object.keys(followersSnapshot.val()).map((followerID) => "timeline/" + followerID + "/" + postID + "/likes");
-      likePaths.forEach(function(likePath) {
-        var likeRef = firebaseDB.ref(likePath);
-        likeRef.transaction(function(likes) {
-          return (likes || 0) + 1;
-        }, function(error, committed, snapshot) {
-          //TODO: handle committed boolean
-          if (error) {
-            response.status(500).json({error: "Internal Server Error"});
-            return;
-          }
-          callback();
-        });
-      });
-    });
-  }
-
-  function updateLikers(callback) {
-    var likersRef = firebaseDB.ref("likers/" + postID);
-    likersRef.update({
-      likerID: true
-    }, function(error) {
-      if (error) {
-        response.status(500).json({error: "Internal Server Error"});
-        return;
-      }
-      callback();
-    });
-  }
-
-  function likeOnTimeline(callback) {
-    var timelineRef = firebaseDB.ref("timeline/" + userID + "/" + postID);
-    timelineRef.update({liked: true}, function(error) {
-      if (error) {
-        response.status(500).json({error: "Internal Server Error"});
-        return;
-      }
-      callback();
-    });
-  }
-
-  // TODO: add likes_post bool for each post in a user's timeline
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
-    updatePost(function() {
-      updateTimelines(function() {
-        updateLikers(function() {
-          likeOnTimeline(function() {
-            response.status(200).json({result: "Like Successful"});
-          })
-        })
-      })
+    likePost(true, postID, authorID, likerID, function() {
+      response.status(200).json({result: "Post Liked Successfully"})
+    })
+  }).catch(function(error) {
+    console.log(error);
+    response.status(401).json({error: "Unauthorized"});
+  });
+
+});
+
+app.post('/unlike', jsonParser, function(request, response) {
+  if (!request.body) {
+    response.status(400).json({error: "Bad Request"});
+    return;
+  }
+
+  //TODO: check if post exists before liking it
+  //TODO: check to see if liker exists before liking it
+
+  var token = request.body.user_token;
+  var postID = request.body.post_id;
+  var authorID = request.body.author_id;
+  var likerID = request.body.liker_id;
+
+  firebase.auth().verifyIdToken(token).then(function(decodedToken) {
+    likePost(false, postID, authorID, likerID, function() {
+      response.status(200).json({result: "Post Unliked Successfully"})
     })
   }).catch(function(error) {
     console.log(error);
