@@ -175,7 +175,7 @@ app.post('/like_post', jsonParser, function(request, response) {
         var likeRef = firebaseDB.ref(likePath);
         likeRef.transaction(function(likes) {
           return (likes || 0) + 1;
-        }, function(error, committed snapshot) {
+        }, function(error, committed, snapshot) {
           //TODO: handle committed boolean
           if (error) {
             response.status(500).json({error: "Internal Server Error"});
