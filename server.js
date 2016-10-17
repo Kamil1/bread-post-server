@@ -81,15 +81,18 @@ function likePost(bool, postID, authorID, likerID, callback) {
   }
 
   function addOne(likes) {
+    if (likes == null) {
+      console.log("likes is null");
+    }
     return (likes || 0) + 1;
   }
 
   function minusOne(likes) {
     if (likes == null) {
-      console.log("likes is null")
+      console.log("likes is null");
       return;
     } else {
-      console.log("likes - 1")
+      console.log("likes - 1");
       return likes - 1;
     }
   }
