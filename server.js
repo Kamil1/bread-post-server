@@ -25,6 +25,7 @@ function likePost(bool, postID, authorID, likerID, callback) {
   function updatePost(unary) {
     var authorPostRef = firebaseDB.ref("posts/" + authorID + "/" + postID + "/likes");
     authorPostRef.transaction(function(likes) {
+      console.log(unary(likes));
       return unary(likes);
     }, function(error, committed, snapshot) {
       //TODO: handle committed boolean
@@ -43,6 +44,7 @@ function likePost(bool, postID, authorID, likerID, callback) {
       likePaths.forEach(function(likePath) {
         var likeRef = firebaseDB.ref(likePath);
         likeRef.transaction(function(likes) {
+          console.log(unary(likes));
           return unary(likes);
         }, function(error, committed, snapshot) {
           //TODO: handle committed boolean
@@ -81,19 +83,13 @@ function likePost(bool, postID, authorID, likerID, callback) {
   }
 
   function addOne(likes) {
-    if (likes == null) {
-      console.log("likes is null");
-      console.log(likes || 0);
-    }
     return (likes || 0) + 1;
   }
 
   function minusOne(likes) {
     if (likes == null) {
-      console.log("likes is null");
       return;
     } else {
-      console.log("likes - 1");
       return likes - 1;
     }
   }
