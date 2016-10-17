@@ -52,16 +52,20 @@ function likePost(bool, postID, authorID, likerID, callback) {
             response.status(500).json({error: "Internal Server Error"});
             return;
           }
-          updateLikers();
+          if (bool) {
+            addLiker();
+          } else {
+            removeLiker();
+          }
         });
       });
     });
   }
 
-  function updateLikers() {
+  function addLiker() {
     var likersRef = firebaseDB.ref("likers/" + postID);
     var likerObj = {};
-    likerObj[likerID] = bool;
+    likerObj[likerID] = true;
     likersRef.update(likerObj, function(error) {
       if (error) {
         response.status(500).json({error: "Internal Server Error"});
@@ -69,6 +73,10 @@ function likePost(bool, postID, authorID, likerID, callback) {
       }
       likeOnTimeline();
     });
+  }
+
+  function removeLiker() {
+    firebaseDB.ref("likers/" + postID + "/" + likerID).remove();
   }
 
   function likeOnTimeline() {
