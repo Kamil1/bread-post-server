@@ -241,7 +241,7 @@ app.post('/like_post', jsonParser, function(request, response) {
 
 });
 
-app.post('/unlike', jsonParser, function(request, response) {
+app.post('/unlike_post', jsonParser, function(request, response) {
   if (!request.body) {
     response.status(400).json({error: "Bad Request"});
     return;
