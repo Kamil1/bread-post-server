@@ -22,7 +22,7 @@ function fanoutTimelines(followersSnapshot, post, postID) {
 
 function likePost(bool, postID, authorID, likerID, callback) {
 
-  function updatePost(unary, callback) {
+  function updatePost(unary) {
     var authorPostRef = firebaseDB.ref("posts/" + authorID + "/" + postID + "/likes");
     authorPostRef.transaction(function(likes) {
       return unary(likes);
@@ -32,11 +32,11 @@ function likePost(bool, postID, authorID, likerID, callback) {
         response.status(500).json({error: "Internal Server Error"});
         return;
       }
-      updateTimelines(unary, callback);
+      updateTimelines(unary);
     });
   }
 
-  function updateTimelines(unary, callback) {
+  function updateTimelines(unary) {
     var followersRef = firebaseDB.ref("users/" + authorID + "/followers");
     followersRef.once('value').then(function(followersSnapshot) {
       var likePaths = Object.keys(followersSnapshot.val()).map((followerID) => "timeline/" + followerID + "/" + postID + "/likes");
@@ -50,13 +50,13 @@ function likePost(bool, postID, authorID, likerID, callback) {
             response.status(500).json({error: "Internal Server Error"});
             return;
           }
-          updateLikers(unary, callback);
+          updateLikers();
         });
       });
     });
   }
 
-  function updateLikers(callback) {
+  function updateLikers() {
     var likersRef = firebaseDB.ref("likers/" + postID);
     likersRef.update({
       likerID: bool
@@ -65,11 +65,11 @@ function likePost(bool, postID, authorID, likerID, callback) {
         response.status(500).json({error: "Internal Server Error"});
         return;
       }
-      likeOnTimeline(callback);
+      likeOnTimeline();
     });
   }
 
-  function likeOnTimeline(callback) {
+  function likeOnTimeline() {
     var timelineRef = firebaseDB.ref("timeline/" + likerID + "/" + postID);
     timelineRef.update({liked: bool}, function(error) {
       if (error) {
@@ -85,7 +85,11 @@ function likePost(bool, postID, authorID, likerID, callback) {
   }
 
   function minusOne(likes) {
-    return (likes || 1) - 1;
+    if (likes == null) {
+      return;
+    } else {
+      return likes - 1;
+    }
   }
 
   if (bool) {
