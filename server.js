@@ -127,7 +127,8 @@ function createComment(commentUserID, response, callback) {
     post_user_id: postUserID,
     comment_user_id: commentUserID,
     num_replies: 0,
-    timestamp: timestamp
+    timestamp: timestamp,
+    negative_timestamp: (timestamp * -1)
   };
 
   commentRef.set(commentObj, function(error) {
@@ -219,7 +220,8 @@ app.post('/share_transaction', jsonParser, function(request, response) {
       var postObject = {
         message: message,
         timestamp: timestamp,
-        user_id: userID,
+        negative_timestamp: (timestamp * -1),
+        post_user_id: userID,
         username: username,
         client_id: clientID,
         client_message_index: clientMessageIndex,
@@ -286,6 +288,7 @@ app.post('/create_post', jsonParser, function(request, response) {
     var postObject = {
       message: message,
       timestamp: timestamp,
+      negative_timestamp: (timestamp * -1),
       user_id: userID,
       username: username,
       liked: false,
@@ -364,10 +367,11 @@ app.post('/feed_since', jsonParser, function(request, response) {
 
   var token = request.body.user_token;
   var since = request.body.since;
+  var negative_since = since * -1;
 
   function getFeed(userID) {
     var timelineRef = firebaseDB.ref("timeline/" + userID);
-    timelineRef.orderByChild("timestamp").endAt(since).limitToLast(15).once("value", function(snapshot) {
+    timelineRef.orderByChild("negative_timestamp").startAt(negative_since).limitToFirst(15).once("value", function(snapshot) {
       response.status(200).json({result: snapshot.val()});
       return;
     }, function(error) {
@@ -393,12 +397,13 @@ app.post('/feed_until', jsonParser, function(request, response) {
   }
 
   // TODO: ensure none of these fields are null -- this should be checked on all endpoints in all servers
-  var until  = request.body.until + 1;
   var token  = request.body.user_token;
+  var until  = request.body.until + 1;
+  var negative_until = until * -1;
 
   function getFeed(userID) {
     var timelineRef = firebaseDB.ref("timeline/" + userID);
-    timelineRef.orderByChild("timestamp").startAt(until).limitToFirst(15).once("value", function(snapshot) {
+    timelineRef.orderByChild("negative_timestamp").endAt(negative_until).limitToLast(15).once("value", function(snapshot) {
       response.status(200).json({result: snapshot.val()});
       return;
     }, function(error) {
