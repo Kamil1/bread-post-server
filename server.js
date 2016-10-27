@@ -229,6 +229,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
         item_message_index: itemMessageIndex,
         item_message_length: itemMessageLength,
         liked: false,
+        likes: 0,
         reply_count: 0
       };
 
