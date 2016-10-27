@@ -119,13 +119,15 @@ function likePost(bool, postID, authorID, likerID, response, callback) {
 }
 
 function createComment(commentUserID, response, callback) {
+  var timestamp = (new Date).getTime() / 1000;
   var commentRef = firebaseDB.ref("comments/" + commentUserID).push();
   var commentObj = {
     comment: comment,
     post_id: postID,
     post_user_id: postUserID,
     comment_user_id: commentUserID,
-    num_replies: 0
+    num_replies: 0,
+    timestamp: timestamp
   };
 
   commentRef.set(commentObj, function(error) {
@@ -171,7 +173,7 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     var username = "";
 
     function getClientName(callback) {
-      var clientRef = firebaseDB.ref("clients/public/" + clientID);
+      var clientRef = firebaseDB.ref("clients/" + clientID + "/public/");
       clientRef.once("value", function(data) {
         clientName = data.val().app_name;
         callback();
@@ -226,13 +228,14 @@ app.post('/share_transaction', jsonParser, function(request, response) {
         item_client_id: clientID,
         item_message_index: itemMessageIndex,
         item_message_length: itemMessageLength,
-        liked: false
+        liked: false,
+        reply_count: 0
       };
 
       var followersRef = firebaseDB.ref("users/" + userID + "/followers");
       followersRef.once('value').then(function(followersSnapshot) {
         var rootRef = firebaseDB.ref();
-        var fanoutObject = fanoutTimelines(followersSnapshot, postObject, postID, fanoutObject);
+        var fanoutObject = fanoutTimelines(followersSnapshot, postObject, postID);
         fanoutObject["posts/" + userID + "/" + postID] = postObject;
         rootRef.update(fanoutObject, function(error) {
           if (error) {
@@ -256,6 +259,49 @@ app.post('/share_transaction', jsonParser, function(request, response) {
     })
 
   });
+});
+
+app.post('/create_post', jsonParser, function(request, response) {
+  if (!request.body) {
+    response.status(400).json({error: "Bad Request"});
+    return;
+  }
+
+  var token = request.body.user_token;
+  var message = request.body.message;
+  var timestamp = (new Date).getTime() / 1000;
+
+  function getUsername(userID) {
+    var usernameRef = firebaseDB.ref("users/" + userID + "/account/username");
+    usernameRef.once("value").then(function(snapshot) {
+      createPost(userID, snapshot.val());
+    })
+  }
+
+  function createPost(userID, username) {
+    var postRef = firebaseDB.ref("posts/" + userID);
+    var newPostRef = postRef.push();
+    var postID = newPostRef.key;
+    var postObject = {
+      message: message,
+      timestamp: timestamp,
+      user_id: userID,
+      username: username,
+      liked: false,
+      reply_count: 0
+    };
+
+    
+  }
+
+  firebase.auth().verifyIdToken(token).then(function(decodedToken) {
+    getUsername(decodedToken.uid);
+  }).catch(function(error) {
+    console.log(error);
+    response.status(401).json({error: "Unauthorized"});
+  })
+
+
 });
 
 app.post('/like_post', jsonParser, function(request, response) {
@@ -397,10 +443,24 @@ app.post('/post_comment', jsonParser, function(request, response) {
         console.log("Error saving data to firebase: " + error);
         return;
       } else {
-        response.status(200).json({result: "Comment Successful"});
-        return;
+        incrementReplyCounts(postPaths);
       }
     });
+  }
+
+  function incrementReplyCounts(postPaths) {
+    postPaths.forEach(function(path) {
+      var ref = firebaseDB.ref(path + "/reply_count");
+      ref.transaction(function(count) {
+        return (count || 0) + 1;
+      }, function(error, committed, snapshot) {
+        if (error) {
+          response.status(500).json({error: "Internal Server Error"});
+          return;
+        }
+        response.status(500).json({error: "Comment Successful"});
+      });
+    })
   }
 
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
@@ -433,8 +493,20 @@ app.post('/comment_reply', jsonParser, function(request, response) {
         console.log("Error saving data to firebase: " + error);
         return;
       }
-      response.status(200).json({result: "Comment Successful"});
-      return;
+      incrementReplyCount(replyCommentID, commentUserID);
+    });
+  }
+
+  function incrementReplyCount(replyCommentID, commentUserID) {
+    var origininalCommentRef = firebaseDB.ref("comments/" + commentAuthorID + "/" + commentID + "/reply_count");
+    origininalCommentRef.transaction(function(count) {
+      return (count || 0) + 1;
+    }, function(error, committed, snapshot) {
+      if (error) {
+        response.status(500).json({error: "Internal Server Error"});
+        return;
+      }
+      response.status(500).json({error: "Comment Successful"});
     });
   }
 
@@ -444,4 +516,67 @@ app.post('/comment_reply', jsonParser, function(request, response) {
     console.log(error);
     response.status(401).json({error: "Unauthorized"});
   });
+});
+
+app.post('/comments_since', jsonParser, function(request, response) {
+  if (!request.body) {
+    response.status(400).json({error: "Bad Request"});
+    return;
+  }
+
+  var userID = request.body.user_id;
+  var postID = request.body.post_id;
+  var since  = request.body.since;
+  var token  = request.body.user_token;
+
+  function getComments() {
+    var commentsRef = firebaseDB.ref("posts/" + userID + "/" + postID + "/replies");
+    commentsRef.orderByChild("timestamp").endAt(since).limitToLast(15).once("value", function(snapshot) {
+      response.status(200).json({result: snapshot.val()});
+      return;
+    }, function(error) {
+      response.status(500).json({error: "Internal Server Error"});
+      console.log("Error retrieving comments from Firebase: " + error);
+      return;
+    });
+  }
+
+  firebase.auth().verifyIdToken(token).then(function(decodedToken) {
+    getComments();
+  }).catch(function(error) {
+    console.log(error);
+    response.status(401).json({error: "Unauthorized"});
+  })
+
+});
+
+app.post('/comment_replies', jsonParser, function(request, response) {
+  if (!request.body) {
+    response.status(400).json({error: "Bad Request"});
+    return;
+  }
+
+  var userID = request.body.user_id;
+  var commentID = request.body.comment_id;
+  var since = request.body.since;
+  var token = request.body.user_token;
+
+  function getComments() {
+    var commentsRef = firebaseDB.ref("comments/" + userID + "/" + commentID + "/replies");
+    commentsRef.orderByChild("timestamp").endAt(since).limitToLast(15).once("value", function(snapshot) {
+      response.status(200).json({result: snapshot.val()});
+      return;
+    }, function(error) {
+      response.status(500).json({error: "Internal Server Error"});
+      console.log("Error retrieving comments from Firebase: " + error);
+      return;
+    });
+  }
+
+  firebase.auth().verifyIdToken(token).then(function(decodedToken) {
+    getComments();
+  }).catch(function(error) {
+    console.log(error);
+    response.status(401).json({error: "Unauthorized"});
+  })
 });
