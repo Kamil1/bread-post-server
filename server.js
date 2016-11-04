@@ -118,7 +118,7 @@ function likePost(bool, postID, authorID, likerID, response, callback) {
 
 }
 
-function createComment(comment, postID, postUserID, authorID, response, callback) {
+function createComment(comment, postID, postUserID, authorID, authorUsername, response, callback) {
   var timestamp = (new Date).getTime() / 1000;
   var commentRef = firebaseDB.ref("comments/" + commentUserID).push();
   var commentObj = {
@@ -126,6 +126,7 @@ function createComment(comment, postID, postUserID, authorID, response, callback
     post_id: postID,
     post_user_id: postUserID,
     author_id: authorID,
+    author_username: authorUsername,
     num_replies: 0,
     timestamp: timestamp
   };
@@ -135,11 +136,11 @@ function createComment(comment, postID, postUserID, authorID, response, callback
       response.status(500).json({error: "Internal Server Error"});
       return;
     }
-    callback(commentRef.key, authorID);
+    callback(commentRef.key, authorID, commentObj);
   });
 }
 
-function createReply(reply, commentID, commentUserID, authorID, response, callback) {
+function createReply(reply, commentID, commentUserID, authorID, authorUsername, response, callback) {
   var timestamp = (new Date).getTime() / 1000;
   var replyRef = firebaseDB.ref("comments/" + commentUserID).push();
   var replyObj = {
@@ -147,6 +148,7 @@ function createReply(reply, commentID, commentUserID, authorID, response, callba
     comment_id: commentID,
     comment_user_id: commentUserID,
     author_id: authorID,
+    author_username: authorUsername,
     num_replies: 0,
     timestamp: timestamp
   };
@@ -156,7 +158,7 @@ function createReply(reply, commentID, commentUserID, authorID, response, callba
       response.status(500).json({error: "Internal Server Error"});
       return;
     }
-    callback(replyRef.key, authorID);
+    callback(replyRef.key, authorID, replyObj);
   });
 
 }
@@ -450,14 +452,18 @@ app.post('/post_comment', jsonParser, function(request, response) {
   var comment = request.body.comment;
   var token = request.body.user_token;
 
-  function referenceComment(commentID, commentUserID) {
-    var replyObj = {};
-    replyObj[commentID] = commentUserID;
+  function getUsername(authorID) {
+    var usernameRef = firebaseDB.ref("users/" + authorID + "/account/username");
+    usernameRef.once("value").then(function(snapshot) {
+      createComment(comment, postID, postUserID, authorID, snapshot.val(), response, referenceComment);
+    })
+  }
 
+  function referenceComment(commentID, commentUserID, commentObj) {
     var fanoutObject = {};
     var postPaths = allPostPaths(postID, postUserID);
     var replyPaths = postPaths.map((path) => path + "/replies");
-    replyPaths.forEach((path) => fanoutObject[path] = replyObj);
+    replyPaths.forEach((path) => fanoutObject[path] = commentObj);
 
     var rootRef = firebaseDB.ref();
     rootRef.update(fanoutObject, function(error) {
@@ -487,7 +493,7 @@ app.post('/post_comment', jsonParser, function(request, response) {
   }
 
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
-    createComment(comment, postID, postUserID, decodedToken.uid, response, referenceComment);
+    getUsername(decodedToken.uid);
   }).catch(function(error) {
     console.log(error);
     response.status(401).json({error: "Unauthorized"});
@@ -506,10 +512,15 @@ app.post('/comment_reply', jsonParser, function(request, response) {
   var commentAuthorID = request.body.comment_user_id;
   var comment = request.body.comment;
 
-  function referenceComment(replyCommentID, commentUserID) {
+  function getUsername(authorID) {
+    var usernameRef = firebaseDB.ref("users/" + authorID + "/account/username");
+    usernameRef.once("value").then(function(snapshot) {
+      createReply(comment, commentID, commentAuthorID, authorID, snapshot.val(), response, referenceComment);
+    })
+  }
+
+  function referenceComment(replyCommentID, commentUserID, replyObj) {
     var originalCommentRef = firebaseDB.ref("comments/" + commentAuthorID + "/" + commentID + "/replies");
-    var replyObj = {};
-    replyObj[replyCommentID] = commentUserID;
     originalCommentRef.update(replyObj, function(error) {
       if (error) {
         response.status(500).json({error: "Internal Server Error"});
@@ -534,7 +545,7 @@ app.post('/comment_reply', jsonParser, function(request, response) {
   }
 
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
-    createReply(comment, commentID, commentAuthorID, decodedToken.uid, response, referenceComment);
+    getUsername(decodedToken.uid);
   }).catch(function(error) {
     console.log(error);
     response.status(401).json({error: "Unauthorized"});
@@ -547,13 +558,13 @@ app.post('/comments_since', jsonParser, function(request, response) {
     return;
   }
 
-  var userID = request.body.user_id;
+  var authorID = request.body.author_id;
   var postID = request.body.post_id;
   var since  = request.body.since;
   var token  = request.body.user_token;
 
   function getComments() {
-    var commentsRef = firebaseDB.ref("posts/" + userID + "/" + postID + "/replies");
+    var commentsRef = firebaseDB.ref("posts/" + authorID + "/" + postID + "/replies");
     commentsRef.orderByChild("timestamp").endAt(since).limitToLast(15).once("value", function(snapshot) {
       response.status(200).json({result: snapshot.val()});
       return;
@@ -579,13 +590,13 @@ app.post('/comment_replies', jsonParser, function(request, response) {
     return;
   }
 
-  var userID = request.body.user_id;
+  var authorID = request.body.author_id;
   var commentID = request.body.comment_id;
   var since = request.body.since;
   var token = request.body.user_token;
 
   function getComments() {
-    var commentsRef = firebaseDB.ref("comments/" + userID + "/" + commentID + "/replies");
+    var commentsRef = firebaseDB.ref("comments/" + authorID + "/" + commentID + "/replies");
     commentsRef.orderByChild("timestamp").endAt(since).limitToLast(15).once("value", function(snapshot) {
       response.status(200).json({result: snapshot.val()});
       return;
