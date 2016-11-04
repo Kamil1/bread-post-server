@@ -459,7 +459,7 @@ app.post('/post_comment', jsonParser, function(request, response) {
           response.status(500).json({error: "Internal Server Error"});
           return;
         }
-        response.status(500).json({error: "Comment Successful"});
+        response.status(500).json({result: "Comment Successful"});
       });
     })
   }
@@ -507,7 +507,7 @@ app.post('/comment_reply', jsonParser, function(request, response) {
         response.status(500).json({error: "Internal Server Error"});
         return;
       }
-      response.status(500).json({error: "Comment Successful"});
+      response.status(500).json({result: "Comment Successful"});
     });
   }
 
