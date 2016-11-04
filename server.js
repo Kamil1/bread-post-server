@@ -130,8 +130,6 @@ function createComment(comment, postID, postUserID, commentUserID, response, cal
     timestamp: timestamp
   };
 
-  console.log(commentObj);
-
   commentRef.set(commentObj, function(error) {
     if (error) {
       response.status(500).json({error: "Internal Server Error"});
