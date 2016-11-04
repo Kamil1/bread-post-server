@@ -130,6 +130,8 @@ function createComment(comment, postID, postUserID, commentUserID, response, cal
     timestamp: timestamp
   };
 
+  console.log(commentObj);
+
   commentRef.set(commentObj, function(error) {
     if (error) {
       response.status(500).json({error: "Internal Server Error"});
@@ -465,7 +467,7 @@ app.post('/post_comment', jsonParser, function(request, response) {
   }
 
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
-    createComment(decodedToken.uid, response, referenceComment);
+    createComment(comment, postID, postUserID, decodedToken.uid, response, referenceComment);
   }).catch(function(error) {
     console.log(error);
     response.status(401).json({error: "Unauthorized"});
@@ -512,7 +514,7 @@ app.post('/comment_reply', jsonParser, function(request, response) {
   }
 
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
-    createComment(decodedToken.uid);
+    createComment(comment, postID, postUserID, decodedToken.uid, response, referenceComment);
   }).catch(function(error) {
     console.log(error);
     response.status(401).json({error: "Unauthorized"});
