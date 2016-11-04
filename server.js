@@ -118,14 +118,14 @@ function likePost(bool, postID, authorID, likerID, response, callback) {
 
 }
 
-function createComment(comment, postID, postUserID, commentUserID, response, callback) {
+function createComment(comment, postID, postUserID, authorID, response, callback) {
   var timestamp = (new Date).getTime() / 1000;
   var commentRef = firebaseDB.ref("comments/" + commentUserID).push();
   var commentObj = {
     comment: comment,
     post_id: postID,
     post_user_id: postUserID,
-    comment_user_id: commentUserID,
+    author_id: authorID,
     num_replies: 0,
     timestamp: timestamp
   };
@@ -135,8 +135,30 @@ function createComment(comment, postID, postUserID, commentUserID, response, cal
       response.status(500).json({error: "Internal Server Error"});
       return;
     }
-    callback(commentRef.key, commentUserID);
+    callback(commentRef.key, authorID);
   });
+}
+
+function createReply(reply, commentID, commentUserID, authorID, response, callback) {
+  var timestamp = (new Date).getTime() / 1000;
+  var replyRef = firebaseDB.ref("comments/" + commentUserID).push();
+  var replyObj = {
+    comment: reply,
+    comment_id: commentID,
+    comment_user_id: commentUserID,
+    author_id: authorID
+    num_replies: 0,
+    timestamp: timestamp
+  };
+
+  replyRef.set(replyObj, function(error) {
+    if (error) {
+      response.status(500).json({error: "Internal Server Error"});
+      return;
+    }
+    callback(replyRef.key, authorID);
+  });
+
 }
 
 
@@ -512,7 +534,7 @@ app.post('/comment_reply', jsonParser, function(request, response) {
   }
 
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
-    createComment(comment, postID, postUserID, decodedToken.uid, response, referenceComment);
+    createReply(comment, commentID, commentAuthorID, decodedToken.uid, response, referenceComment);
   }).catch(function(error) {
     console.log(error);
     response.status(401).json({error: "Unauthorized"});
