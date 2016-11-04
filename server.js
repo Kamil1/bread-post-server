@@ -146,7 +146,7 @@ function createReply(reply, commentID, commentUserID, authorID, response, callba
     comment: reply,
     comment_id: commentID,
     comment_user_id: commentUserID,
-    author_id: authorID
+    author_id: authorID,
     num_replies: 0,
     timestamp: timestamp
   };
