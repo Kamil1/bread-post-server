@@ -431,6 +431,7 @@ app.post('/post_comment', jsonParser, function(request, response) {
   function referenceComment(commentID, commentUserID) {
     var replyObj = {};
     replyObj[commentID] = commentUserID;
+    replyObj[comment] = comment;
 
     var fanoutObject = {};
     var postPaths = allPostPaths(postID, postUserID);
@@ -461,7 +462,7 @@ app.post('/post_comment', jsonParser, function(request, response) {
         }
         response.status(500).json({error: "Comment Successful"});
       });
-    })
+    });
   }
 
   firebase.auth().verifyIdToken(token).then(function(decodedToken) {
@@ -488,6 +489,7 @@ app.post('/comment_reply', jsonParser, function(request, response) {
     var originalCommentRef = firebaseDB.ref("comments/" + commentAuthorID + "/" + commentID + "/replies");
     var replyObj = {};
     replyObj[replyCommentID] = commentUserID;
+    replyObj[comment] = comment;
     originalCommentRef.update(replyObj, function(error) {
       if (error) {
         response.status(500).json({error: "Internal Server Error"});
